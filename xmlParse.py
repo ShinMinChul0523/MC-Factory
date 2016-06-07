@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import time
 import urllib.request
 from urllib.parse  import quote
 import xml.etree.ElementTree as etree
@@ -62,7 +63,7 @@ def printTitle():
     print("--------------------------------------------------\n")
 
 def printTimetable(num, day, Root):
-    print("\n데이터를 불러오는 중...\n")
+    print("데이터를 불러오는 중...\n")
                 
     a = Data()
     a.parse(1,num,day,Root)
@@ -80,15 +81,74 @@ def main():
 
         inputNum = input("입력 : ")
 
-        if inputNum == '2':
+        if inputNum == '1':
+            printTitle()
+
+            num = input("원하는 호선을 입력하세요 : ")
+
+            now = time.localtime()
+
+            day = 1
+
+            if now.tm_wday < 6:
+                day = 1
+
+            elif now.tm_wday == 6:
+                day = 2
+
+            elif now.tm_wday == 7:
+                day == 3
+                
+            for Root in [1, 2]:
+                if Root == 1:
+                    print("\n상행선 시간표")
+
+                else:
+                     print("\n하행선 시간표")
+                            
+                printTimetable(num, day, Root)
+                
+            input()
+
+        elif inputNum == '2':
             printTitle()
 
             num = input("원하는 호선을 입력하세요 : ")
             day = input("평일 1 토요일 2 일요일 및 공휴일 3 : ")
             Root = input("상행선 1, 하행선 2 : ")
-            
-            printTimetable(num, day, Root);
-            input();
+
+            print("\n")
+            printTimetable(num, day, Root)
+            input()
+
+        elif inputNum == '3':
+            printTitle()
+
+            for num in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+                for day in [1, 2, 3]:
+                    for Root in [1, 2]:
+                        print(num, "호선 ")
+                        
+                        if day == 1:
+                            print("평일 ")
+
+                        elif day == 2:
+                            print("토요일 ")
+
+                        else:
+                            print("일요일 및 공휴일 ")
+
+                        if Root == 1:
+                            print("상행선 시간표")
+
+                        else:
+                            print("하행선 시간표")
+                            
+                        printTimetable(num, day, Root)
+
+                        print("\n")
+                
+            input()
 
     
 if __name__ == "__main__":
