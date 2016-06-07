@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
+import os
 import urllib.request
 from urllib.parse  import quote
 import xml.etree.ElementTree as etree
@@ -54,20 +54,41 @@ class Data:
                     print('막차 출발역 이 \t\t:' + dailyBoxOffice.findtext('L_SUBWAYSNAME'))
                     print('막차 도착역 이름 \t\t:' + dailyBoxOffice.findtext('L_SUBWAYENAME'))
                     print('--------------------------------------------------------------')
-       
-def main():
-    print("------------지하철 첫차와 막차 시간표-------------")
-    print("----------------------------------------------")
-    print("----------------------------------------------")
-    print("----------------------------------------------")
-    print("----------------------------------------------")
-    num = input("원하는 호선을 입력하세요")
-    day = input("평일정보는 1 토요일정보는 2 일요일 및 공휴일 정보는 3")
-    Root = input("상행선정보 1, 하행선정보 2")
-    
+
+def printTitle():
+    os.system('cls')
+    print("--------------------------------------------------")
+    print("----------- 지하철 첫차와 막차 시간표 ------------")
+    print("--------------------------------------------------\n")
+
+def printTimetable(num, day, Root):
+    print("\n데이터를 불러오는 중...\n")
+                
     a = Data()
     a.parse(1,num,day,Root)
     a.printInfo(1)
+
+    print("\n데이터를 불러왔습니다! \n")
+       
+def main():
+    while 1:
+        printTitle()
+        
+        print("1. 오늘 날짜 시간표")
+        print("2. 원하는 시간표")
+        print("3. 모든 노선 시간표\n")
+
+        inputNum = input("입력 : ")
+
+        if inputNum == '2':
+            printTitle()
+
+            num = input("원하는 호선을 입력하세요 : ")
+            day = input("평일 1 토요일 2 일요일 및 공휴일 3 : ")
+            Root = input("상행선 1, 하행선 2 : ")
+            
+            printTimetable(num, day, Root);
+            input();
 
     
 if __name__ == "__main__":
