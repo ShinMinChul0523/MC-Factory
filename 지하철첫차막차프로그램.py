@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import os
+import smtplib
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.header import Header
+from email.mime.multipart import MIMEMultipart
+from email.encoders import encode_base64
+
 import time
 import urllib.request
 from urllib.parse  import quote
@@ -9,7 +16,7 @@ import webbrowser
 import sys
 
 
-
+# Open API
 class Data:
     NONESELECTED = 0
     DATEINFO = 1
@@ -36,7 +43,8 @@ class Data:
         f.close()
         self.tree = etree.parse(self.filename)
         self.root = self.tree.getroot()
-            
+
+    # 화면프린트        
     def printInfo(self, menu):
         self.select_menu = menu
         if self.select_menu == self.DATEINFO:
@@ -58,6 +66,7 @@ class Data:
                     print('막차 도착역 이름 \t\t:' + dailyMetroInfo.findtext('L_SUBWAYENAME'))
                     print('--------------------------------------------------------------')
 
+    # 파일입출력
     def saveInfo(self, menu, f):
         self.select_menu = menu
         if self.select_menu == self.DATEINFO:
@@ -95,12 +104,23 @@ class Data:
                     f.write('막차 도착역 이름 \t\t:' + dailyMetroInfo.findtext('L_SUBWAYENAME') + '\n')
                     f.write('--------------------------------------------------------------\n\n')
 
+# 메인 타이틀 출력
 def printTitle():
     os.system('cls')
     print("--------------------------------------------------")
     print("----------- 지하철 첫차와 막차 시간표 ------------")
     print("--------------------------------------------------\n")
 
+# 메인 현재 시간 출력
+def printTime():
+    t = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+
+    now = time.localtime()
+
+    print("[", now.tm_year,"년", now.tm_mon,"월", now.tm_mday, "일", t[now.tm_wday], "]")
+    print("[", now.tm_hour,"시", now.tm_min,"분 ]\n")
+
+# 시간표 화면 출력
 def printTimetable(num, day, Root):
     print("데이터를 불러오는 중...\n")
                 
@@ -110,14 +130,7 @@ def printTimetable(num, day, Root):
 
     print("\n데이터를 불러왔습니다! \n")
 
-def printTime():
-    t = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-
-    now = time.localtime()
-
-    print("[", now.tm_year,"년", now.tm_mon,"월", now.tm_mday, "일", t[now.tm_wday], "]")
-    print("[", now.tm_hour,"시", now.tm_min,"분 ]\n")
-
+# 시간표 텍스트파일 저장
 def saveData(num, day, Root, menuNum):
     inputNum = input("데이터를 저장할까요? (예: 1, 아니오: 2) : ")
 
@@ -128,17 +141,20 @@ def saveData(num, day, Root, menuNum):
 
         print("\n데이터를 저장하는 중...")
 
+        # 오늘 날짜 시간표 저장
         if menuNum == 1:
             for Root2 in [1, 2]:
                 a = Data()
                 a.parse(1,num,day,Root2)
                 a.saveInfo(1, f)
 
+        # 원하는 시간표 저장
         elif menuNum == 2:
             a = Data()
             a.parse(1,num,day,Root)
             a.saveInfo(1, f)
 
+        # 모든 노선 시간표 저장
         elif menuNum == 3:
             for num2 in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
                 for day2 in [1, 2, 3]:
@@ -149,22 +165,59 @@ def saveData(num, day, Root, menuNum):
             
 
         f.close()
+
+# 시간표 파일 리스트
+def getFileList() :
+    # 텍스트 리스트를 다른 텍스트 파일로 만든다.
+    os.system('dir /b *.txt > list.txt')
+
+    # 만든 파일을 오픈한다.
+    f = open('list.txt')
+            
+    line = f.readline()     # 한줄 읽기
+    line = line[:-1]        # 공백문자 제거
+
+    # 모든 파일을 리스트에 담는다.
+    fileList = []
+            
+    while line:
+        if line != "list.txt":
+            fileList.append(line)
+                    
+        line = f.readline()
+        line = line[:-1]
+
+    # 파일 리스트를 출력한다.
+    index = 1
+    for d in fileList:
+        print("[", index, "] ", d)
+        index += 1
+
+    f.close()
     
-       
+    return fileList
+
+    
+#------
+# 메인
+#------
 def main():
     while 1:
         printTitle()
         printTime()
 
+        # 메뉴
         print("1. 오늘 날짜 시간표")
         print("2. 원하는 시간표")
         print("3. 모든 노선 시간표")
         print("4. 저장한 시간표")
-        print("5. 종료\n")
-        print("6. 인터넷 검색") 
+        print("5. 이메일 전송")
+        print("6. 인터넷 검색")
+        print("7. 종료\n")
 
         inputNum = input("입력 : ")
 
+        # 1. 오늘 날짜 시간표
         if inputNum == '1':
             printTitle()
             printTime()
@@ -175,16 +228,16 @@ def main():
 
             day = 1
 
-            if now.tm_wday < 6:
+            if now.tm_wday < 6:         # 평일
                 day = 1
 
-            elif now.tm_wday == 6:
+            elif now.tm_wday == 6:      # 토요일
                 day = 2
 
-            elif now.tm_wday == 7:
+            elif now.tm_wday == 7:      # 일요일
                 day == 3
                 
-            for Root in [1, 2]:
+            for Root in [1, 2]:         # 상, 하행선 모두 출력
                 if Root == 1:
                     print("\n상행선 시간표")
 
@@ -195,6 +248,7 @@ def main():
                 
             saveData(num, day, Root, 1)
 
+        # 2. 원하는 시간표
         elif inputNum == '2':
             printTitle()
             printTime()
@@ -208,13 +262,14 @@ def main():
             
             saveData(num, day, Root, 2)
 
+        # 3. 모든 노선 시간표
         elif inputNum == '3':
             printTitle()
             printTime()
 
-            for num in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
-                for day in [1, 2, 3]:
-                    for Root in [1, 2]:
+            for num in [1, 2, 3, 4, 5, 6, 7, 8, 9]:     # 호선
+                for day in [1, 2, 3]:                   # 날짜
+                    for Root in [1, 2]:                 # 상,하행선
                         print(num, "호선 ")
                         
                         if day == 1:
@@ -238,55 +293,132 @@ def main():
                 
             saveData(num, day, Root, 3)
 
+        # 4. 저장한 시간표
         elif inputNum == '4':
             printTitle()
             printTime()
 
-            os.system('dir /b *.txt > list.txt')
+            # 파일 이름 리스트를 얻어온다.
+            fileList = getFileList()
 
-            f = open('list.txt')
+            if len(fileList) == 0:
+                print("\n데이터가 없습니다.")
+                input()
+                continue
             
-            line = f.readline()
-            line = line[:-1]
-            fileList = []
-
-            while line:
-                if line != "list.txt":
-                    fileList.append(line)
-                    
-                line = f.readline()
-                line = line[:-1]
-
-            index = 1
-            for d in fileList:
-                print("[", index, "] ", d)
-                index += 1
-
-            f.close()
-
             fileNum = int(input("\n불러올 파일 번호를 입력해주세요 : "))
 
             printTitle()
             printTime()
-            print("데이터를 불러오는 중...\n")
 
-            if len(fileList) == 0:
-                print("데이터가 없습니다.")
-
-            elif len(fileList) >= fileNum:
+            # 입력된 번호의 파일을 읽어서 출력한다.
+            if len(fileList) < fileNum:
+                print("번호를 잘못 입력하셨습니다.")
+                
+            else:
+                print("데이터를 불러오는 중...\n")
                 f = open(fileList[fileNum - 1])
                 print(f.read())
                 f.close()
+                print("\n데이터를 불러왔습니다! \n")
 
-            print("\n데이터를 불러왔습니다! \n")
             input()
+
+        # 5. 이메일 전송
+        elif inputNum == '5':
+            printTitle()
+            printTime()
+
+            # 메일 정보 입력
+            senderID = input("daum 아이디 입력 : ")
+            senderPW = input("daum 패스워드 입력 : ")
+            sender = senderID + '@daum.net'
+
+            print("\n")
+
+            recipient = input("받는 사람 메일 주소 : ")
+
+            print("\n")
+
+            mailTitle = input("메일 제목 : ")
+            mailString = input("내용 : ")
+
+            # 첨부파일 정보 입력
+            attach = "";
+            
+            printTitle()
+            printTime()
+            
+            fileList = getFileList()
+
+            if len(fileList) == 0:
+                print("\n첨부 할 수 있는 데이터가 없습니다.")
+                print("메일 보내기에 실패했습니다.")
+                input()
+                continue
+            
+            fileNum = int(input("\n불러올 파일 번호를 입력해주세요 : "))
+
+
+            # 입력된 번호의 파일을 읽어서 출력한다.
+            if len(fileList) < fileNum:
+                print("\n번호를 잘못 입력하셨습니다.")
+                print("메일 보내기에 실패했습니다.")
+                input()
+                continue
+                
+            else:
+                attach = fileList[fileNum - 1]
+
+            print("\n메일을 전송하고 있습니다!!")
+
+            # 메일 정보 설정
+            msg = MIMEMultipart()
+            msg['Subject'] = Header(mailTitle,'utf8')
+            msg['From'] = sender
+            msg['To'] = recipient
+
+            # 서버 접속
+            s = smtplib.SMTP_SSL('smtp.daum.net',465)
+
+            try:
+                s.login( senderID , senderPW )
+
+            except:
+                print("\n아이디 또는 비밀번호가 잘못되었습니다.")
+                print("메일 보내기에 실패했습니다.")
+                input()
+                continue
+                
+
+            # 첨부파일
+            if (attach != None):
+                part = MIMEBase("application", "octet-stream" , _charset="utf8")
+                part.set_payload(open(attach, "rb").read())
+                encode_base64(part)
+                part.add_header("Content-Disposition", "attachment", filename = ("utf8", "",os.path.basename(attach)))
+            
+            msg.attach(part)
+            msg.attach(MIMEText(mailString, "html", _charset="utf8"))
+
+            # 메일 전송
+            s.sendmail(sender, recipient, msg.as_string())
+            s.quit()
+
+            print("\n메일 전송을 완료하였습니다.")
+                
+            input()
+            
+        # 6. 인터넷 검색    
         elif inputNum == '6':
+            printTitle()
+            printTime()
             search=input("검색어를 입력하세요:")
             search_split=search.split()
             webbrowser.open("https://www.google.co.kr/search?q="+search)
-            break
-            
-        elif inputNum == '5':
+
+        # 7. 종료    
+        elif inputNum == '7':
             break
 
     
